@@ -1,0 +1,26 @@
+{
+  "name": "minibar",
+  "version": "0.0.1",
+  "description": "Simple serving of RESTful cocktails",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/advanderveer/minibar"
+  },
+  "keywords": [
+    "frontend",
+    "server",
+    "RESTful"
+  ],
+  "author": "Ad van der Veer <advanderveer>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/advanderveer/minibar/issues"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.2"
+  }
+}
