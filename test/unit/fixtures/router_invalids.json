@@ -1,0 +1,15 @@
+{
+	"invalid1": {
+		"index": {
+
+		}
+	},
+
+	"invalid2": {
+		"index": {
+			"path": "/",
+			"defaults": true
+		}
+	}
+
+}

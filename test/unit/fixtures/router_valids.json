@@ -1,0 +1,11 @@
+{
+	"valid1": {
+		"index": {
+			"path": "/"
+		},
+
+		"users": {
+			"path": "/users"
+		}
+	}
+}
