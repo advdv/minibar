@@ -30,6 +30,7 @@
     "grunt-contrib-watch": "~0.5.3"
   },
   "dependencies": {
-    "args-js": "~0.10.3"
+    "args-js": "~0.10.3",
+    "nunjucks": "~1.0.1"
   }
 }

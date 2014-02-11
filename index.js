@@ -1,6 +1,7 @@
 var minibar = {
 
-  router: require('./src/router.js')
+  router: require('./src/router.js'),
+  renderer: require('./src/renderer.js')
 
 };
 

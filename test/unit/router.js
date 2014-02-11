@@ -247,7 +247,7 @@ describe('minibar router:', function(){
       }).should.throw(/Argument/);
     });
 
-    it("#match(), check parameters", function(){
+    it("should match on url alonse", function(){
 
       var res0 = r2.match('/');
       res0._route.should.equal('index');
@@ -289,7 +289,54 @@ describe('minibar router:', function(){
 
     });
 
+
+    it("should match with context", function(){
+
+      var res = r.match('/api/yet/boeing');
+      res.should.have.property('jetname').and.equal('boeing');
+
+      res = r.match('/api/yet/boeing', {_method: "GET"});
+      res.should.have.property('jetname').and.equal('boeing');
+
+      (function(){
+        res = r.match('/api/yet/boeing', {_method: {}});
+      }).should.throw(/Invalid context/);
+      
+      res = r.match('/api/yet/boeing', {_method: "GET"});
+      res.should.have.property('jetname').and.equal('boeing');
+
+      (function(){
+        res = r.match('/api/yet/boeing', {_method: "POST"});
+      }).should.throw(/No route was found/);
+
+    });
+
+
   });
+
+  /**
+   * Test creationg of request context
+   */
+  describe('createRequestContext()', function(){
+    var r;
+    beforeEach(function(){
+      r = minibar.router(__dirname + '/fixtures/router_routes.json');
+    });
+
+    it('should throw on invalid arg', function(){
+
+      (function(){
+        r.createRequestContext("aaa");
+      }).should.throw(/Argument/);
+
+      var ctx = r.createRequestContext({method: 'GET'});
+      ctx.should.have.property('_method').and.equal('GET');
+
+    });
+
+  });
+
+
 
   /**
    * Test middleware handle

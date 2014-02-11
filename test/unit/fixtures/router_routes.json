@@ -36,5 +36,12 @@
 			"username": "advanderveer",
 			"car": "bmw"
 		}
+	},
+
+	"contexted": {
+		"path": "/api/yet/{jetname}",
+		"requirements": {
+			"_method": "GET"
+		}
 	}
 }

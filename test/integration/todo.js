@@ -20,4 +20,12 @@ describe('TODO example:', function(){
 
   });
 
+  describe('"/hello/ad"',function(){
+    it('GET should return 200 and contain "ad"', function(done){
+      request(app)
+        .get('/hello/ad')
+        .expect(200, /hello ad/, done);
+    });
+  });
+
 });

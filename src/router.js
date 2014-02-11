@@ -1,5 +1,4 @@
 var Args = require('args-js');
-var fs = require('fs');
 
 var Collection = function Collection(routeConfig) {
   var self = this;
@@ -50,22 +49,22 @@ var Collection = function Collection(routeConfig) {
 
 
 module.exports = function(config) {
-  var router = {};
+  var self = {};
   var SEPARATORS = '/,;.:-_~+*=@|';
-  router.Collection = Collection;
+  self.Collection = Collection;
   config = Args([
     {path:       Args.STRING | Args.Required}
   ], arguments);
 
   //try to load routes
   try {
-    router.routeConfig = require(config.path);  
+    self.routeConfig = require(config.path);  
   } catch(err) {
     throw new Error('Exception while requiring routes from "'+config.path+'", does it exist and contains valid JSON?');
   }
 
   //create collection
-  router.collection = new Collection(router.routeConfig);
+  self.collection = new Collection(self.routeConfig);
 
   /**
    * Compiles an route into regexp
@@ -75,7 +74,7 @@ module.exports = function(config) {
    * @param  {object} route the route
    * @return {object} compiled route
    */
-  router.compile = function(route) {
+  self.compile = function(route) {
     var args = Args([
       {route:       Args.OBJECT | Args.Required}
     ], arguments);
@@ -199,15 +198,17 @@ module.exports = function(config) {
    *
    * @method match()
    * @param  {string} url the url to match
+   * @param {Object} context additional request context to match
    * @return {Object} the route attributes
    */
-  router.match = function(url) {
+  self.match = function(url, context) {
     var args = Args([
-      {url:       Args.STRING | Args.Required}
+      {url:       Args.STRING | Args.Required},
+      {context:       Args.OBJECT | Args.Optional, _default: {}}
     ], arguments);
     url = args.url;
 
-    var routes = router.collection.routes;
+    var routes = self.collection.routes;
     var matched = false;
     var attributes = {};
 
@@ -216,14 +217,33 @@ module.exports = function(config) {
         return;
 
       var route = routes[name];
-      var compiled = router.compile(route);
+      var compiled = self.compile(route);
 
       //first try a less expensive method for testing
       if ('' !== compiled.staticPrefix && url.indexOf(compiled.staticPrefix) !== 0) {
         return;
       }
 
+      //first: match url
       var match = url.match(compiled.regexp);
+
+      //second: match context
+      if(route.requirements) {
+        Object.keys(route.requirements).forEach(function(name){
+          if(args.context[name] !== undefined) {
+            
+            var ctx = args.context[name];
+            if(typeof ctx !== 'string') {
+              throw new Error('Invalid context attribute');
+            }
+
+            if(ctx.match(route.requirements[name]) === null) {
+              match = null; //no match if context requirements fail
+            }
+          }          
+        });
+      }
+
       if(match === null)
         return;
 
@@ -252,6 +272,23 @@ module.exports = function(config) {
     return attributes;
   };
 
+  /**
+   * Create a context that can be used by the router for retrieving
+   * additional matching attributes
+   * @param  {http.ClientRequest} request the request
+   * @return {Object}         the context
+   */
+  self.createRequestContext = function(request) {
+    var args = Args([
+      {request:       Args.OBJECT | Args.Required}
+    ], arguments);
+
+    var method = request.method;
+
+    return {
+      "_method": method
+    };
+  };
 
 
   /**
@@ -260,7 +297,7 @@ module.exports = function(config) {
    * @param  {response}   response [description]
    * @param  {Function} next     [description]
    */
-  router.handle = function(request, response, next) {
+  self.handle = function(request, response, next) {
 
     //get url
     var url = request.url;
@@ -270,9 +307,8 @@ module.exports = function(config) {
     //match route
     var attribs;
     try {
-      attribs = router.match(url);  
+      attribs = self.match(url, self.createRequestContext(request));  
     } catch(err) {
-
       //if not 404 throw again
       if(err.message.match(/No route/) === null) {
         throw err;
@@ -290,5 +326,5 @@ module.exports = function(config) {
   };
 
 
-  return router;
+  return self;
 };

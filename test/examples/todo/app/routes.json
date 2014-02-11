@@ -1,5 +1,19 @@
 {
+
+	"hello": {
+		"path": "/hello/{name}",
+		"defaults": {
+			"view": "hello.html"
+		}
+	},
+	
 	"index": {
-		"path": "/"
+		"path": "/",
+		"defaults": {
+			"view": "index.html"
+		},
+		"requirements": {
+			"_method": "GET"
+		}
 	}
 }
