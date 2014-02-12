@@ -1,12 +1,11 @@
 {
-
 	"hello": {
 		"path": "/hello/{name}",
 		"defaults": {
 			"view": "hello.html"
 		}
 	},
-	
+
 	"index": {
 		"path": "/",
 		"defaults": {

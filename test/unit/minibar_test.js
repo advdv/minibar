@@ -6,6 +6,7 @@ describe('minibar:', function(){
 
     minibar.should.have.property('router').and.be.instanceOf(Function);
     minibar.should.have.property('renderer').and.be.instanceOf(Function);
+    minibar.should.have.property('interceptor').and.be.instanceOf(Function);
 
 
   });

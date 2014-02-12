@@ -3,10 +3,22 @@ module.exports = function(grunt) {
   //register tasks
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-nodemon');
 
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+
+    // todo example
+    nodemon: {
+      todo_example: {
+        script: 'test/examples/todo/todo-example.js',
+        options: {
+          ext: 'js,json',
+          watch: ['src', 'test']
+        }
+      }
+    },
 
     //
     // Mocha testing unit/integration
@@ -24,7 +36,7 @@ module.exports = function(grunt) {
           require: ['should'],
           mocha: require('mocha')
         },
-        src: ['test/unit/*.js']
+        src: ['test/unit/**/*_test.js']
       }
     },
 
@@ -33,9 +45,8 @@ module.exports = function(grunt) {
     //
     watch: {
       src: {
-        files: ['index.js', 'src/*.js'],
+        files: ['index.js', 'src/**/*.js'],
         tasks: ['mochaTest:unit', 'mochaTest:integration']
-
       },
 
       integration_tests: {
@@ -43,7 +54,7 @@ module.exports = function(grunt) {
         tasks: ['mochaTest:integration']
       },
       unit_tests: {
-        files: ['test/unit/*.js', 'test/unit/**/*.json'],
+        files: ['test/unit/**/*_test.js', 'test/unit/**/*.json', 'test/unit/fixtures/**/*.html'],
         tasks: ['mochaTest:unit', 'mochaTest:integration']
       },
     },
@@ -54,5 +65,6 @@ module.exports = function(grunt) {
   grunt.registerTask('default', []);
   grunt.registerTask('test', ['mochaTest:integration']);
   grunt.registerTask('start', ['watch']);
+  grunt.registerTask('examples:todo', ['nodemon:todo_example']);
 
 };

@@ -1,0 +1,3 @@
+before
+{% resource "https://api.github.com/repos/mikeal/request AS repo" %}seethrough{{repo.name}}{% endresource %}
+after

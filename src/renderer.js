@@ -16,6 +16,9 @@ module.exports = function(config) {
   //create nunjucks env
   self.templating = nunjucks.configure(config.viewPath, config.nunjucks);
 
+  //load extension
+
+
   /**
    * middleware handle function
    * @param  {request}   request  [description]
