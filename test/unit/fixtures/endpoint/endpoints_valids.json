@@ -1,0 +1,23 @@
+{
+	"http://www.google.com/results": {
+	    "url": "https://api.github.com/repos/mikeal/request",
+	    "headers": {
+	        "User-Agent": "request"
+	    }
+	},
+
+	"http://www.google.com/maps/{location}": {
+	    "url": "https://fake-data.com/maps/{location}",
+		"headers": {
+	        "User-Agent": "request"
+	    }
+	},
+
+	"http://www.github.com/{user}/repos": {
+		"test": "bogus"
+	},
+
+	"http://www.github.com/ad/stargazers": {
+		"test": "bogus"
+	}
+}

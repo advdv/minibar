@@ -2,7 +2,7 @@ var express = require('express');
 var app = module.exports = express();
 var minibar = require('../../..');
 
-app.use(minibar.router(__dirname + '/app/routes.json'));
+app.use(minibar.router().load(__dirname + '/app/routes.json'));
 app.use(minibar.renderer(__dirname + '/src/html'));
 
 //writer

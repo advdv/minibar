@@ -3,7 +3,7 @@ var ResourceExtension = require('../../../src/nunjucks/resource.js');
 var nunjucks = require('nunjucks');
 var sinon = require('sinon');
 
-var getStub = function(url, cb) {
+var requestStub = function(url, cb) {
   if(url === 'https://api.github.com/invalid') {
     cb(false, {}, 'invalid json');
   } else if(url === '/invalid') {
@@ -20,8 +20,8 @@ describe('nunjucks resource tag:', function(){
 
   var env, ext, interceptor;
   beforeEach(function(){
-    interceptor = minibar.interceptor();
-    sinon.stub(interceptor, "get", getStub);
+    interceptor = minibar.interceptor({configFile: __dirname+'/../fixtures/endpoint/endpoints_valids.json'});
+    sinon.stub(interceptor, "request", requestStub);
 
     env = nunjucks.configure(__dirname + '/../fixtures/views/resource', {});
     ext = new ResourceExtension(interceptor);
@@ -31,7 +31,6 @@ describe('nunjucks resource tag:', function(){
   it('should have been loaded', function(){
     env.extensions.should.have.property('ResourceExtension');
   });
-
 
   describe('parseResource()', function(){
 
@@ -60,7 +59,6 @@ describe('nunjucks resource tag:', function(){
     });
 
   });
-
 
   describe('parse()', function(){
 
@@ -91,7 +89,6 @@ describe('nunjucks resource tag:', function(){
         env.render('invalid3.html', {});
       }).should.throw(/Invalid url/);
     });
-
 
   });
 

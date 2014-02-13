@@ -6,6 +6,10 @@
 
 		"users": {
 			"path": "/users"
+		},
+
+		"absolute": {
+			"path": "http://google.com/users"
 		}
 	}
 }

@@ -49,7 +49,7 @@ var ResourceExtension = function ResourceExtension(config) {
     resource = self.parseResource(arg1);
 
     //get resource and add result to context
-    self.interceptor.get(resource.url, function(err, response, body){
+    self.interceptor.request(resource.url, function(err, response, body){
       if(err) {
         done(err); //error on request
         return;

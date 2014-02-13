@@ -1,4 +1,5 @@
 var Args = require('args-js');
+var url = require('url');
 
 var Collection = function Collection(routeConfig) {
   var self = this;
@@ -25,6 +26,23 @@ var Collection = function Collection(routeConfig) {
     return self;
   };
 
+  self.all = function() {
+    return self.routes;
+  };
+
+  self.remove = function(name) {
+    delete self.routes[name];
+  };
+
+  self.get = function(name) {
+    return self.routes[name];
+  };
+
+  self.has = function(name) {
+    var res = self.get(name);
+    return ((res === undefined) ? false : true);
+  };
+
   self.add = function(name, route) {
     var args = Args([
       {name:       Args.STRING | Args.Required},
@@ -34,7 +52,12 @@ var Collection = function Collection(routeConfig) {
     if(route.path === undefined)
       throw new Error('given route "'+name+'" did not specify a path, received: ' + JSON.stringify(route));
 
-    route.path = '/' + normalizePath(route.path);
+    var urlObj = url.parse(route.path);
+    route.path = normalizePath(url.format(urlObj));
+    //if path is not absolute prefix with slash
+    if(urlObj.protocol === null || urlObj.hostname === null) {
+      route.path = '/' + route.path;
+    }
 
     if(route.defaults !== undefined && typeof route.defaults !== 'object' )
       throw new Error('given route "'+name+'" expected an object to specify defaults, received:' + JSON.stringify(route.defaults));
@@ -52,19 +75,31 @@ module.exports = function(config) {
   var self = {};
   var SEPARATORS = '/,;.:-_~+*=@|';
   self.Collection = Collection;
-  config = Args([
-    {path:       Args.STRING | Args.Required}
-  ], arguments);
-
-  //try to load routes
-  try {
-    self.routeConfig = require(config.path);  
-  } catch(err) {
-    throw new Error('Exception while requiring routes from "'+config.path+'", does it exist and contains valid JSON?');
-  }
 
   //create collection
-  self.collection = new Collection(self.routeConfig);
+  self.collection = new Collection({});
+
+  /**
+   * Load route config from json file
+   * @param  {String} path the path to the configuration file
+   * @return {self}      router
+   */
+  self.load = function(path) {
+    args = Args([
+      {path:       Args.STRING | Args.Required}
+    ], arguments);
+
+    //try to load routes
+    var routeConfig;
+    try {
+      routeConfig = require(args.path);  
+    } catch(err) {
+      throw new Error('Exception while requiring routes from "'+args.path+'", does it exist and contains valid JSON?');
+    }
+
+    self.collection.build(routeConfig);
+    return self;
+  };
 
   /**
    * Compiles an route into regexp
@@ -272,6 +307,63 @@ module.exports = function(config) {
     return attributes;
   };
 
+
+  /**
+   * Generate an url based on the name of the route
+   *
+   * @method generate()
+   * @param  {string} name       The route name
+   * @param  {object} parameters route parameters
+   * @return {string}            the url
+   */
+  self.generate = function(name, parameters) {
+    parameters = (parameters !== undefined) ? parameters : {};
+
+    if(self.collection.has(name) === false)
+      throw new Error('Route with name "'+name+'" does not exist.');
+
+    var route = self.collection.get(name);
+    if(route.defaults !== undefined) {
+      Object.keys(route.defaults).forEach(function(def){
+        if(!(def in parameters))
+          parameters[def] = route.defaults[def];
+      });        
+    }
+
+    var compiled = self.compile(route);
+    Object.keys(compiled.variables).forEach(function(key){
+      if(parameters[key] === undefined)
+        throw new Error('Some mandatory parameters are missing ("'+key+'") to generate a URL for route "'+name+'"');
+    });
+
+    var url = '';
+    var optional = true;
+    var defaults = (route.defaults === undefined) ? ({}) : (route.defaults);
+    var tokens = compiled.tokens.reverse();
+    tokens.forEach(function(token){
+      if ('variable' === token[0]) {
+        if (!optional || !(token[3] in defaults) || undefined !== parameters[token[3]] && parameters[token[3]] !== defaults[token[3]]) {
+
+          if(!new RegExp('^'+token[2]+'$').test(parameters[token[3]])) {
+            throw new Error('Parameter "'+token[3]+'" for route "'+name+'" must match "'+token[2]+'" ("'+parameters[token[3]]+'" given) to generate a corresponding URL.');
+          }
+
+          url = token[1] + parameters[token[3]] + url;
+          optional = false;
+
+        }
+      } else {
+        // static text
+        url = token[1] + url;
+        optional = false;
+      }
+
+    });
+
+    return url;
+  };
+
+
   /**
    * Create a context that can be used by the router for retrieving
    * additional matching attributes
@@ -324,7 +416,6 @@ module.exports = function(config) {
 
     next();
   };
-
 
   return self;
 };

@@ -5,7 +5,6 @@ describe('minibar router:', function(){
   it('factory should create a object with correct (middleware) interface', function(){
     
     var router = minibar.router({path: __dirname + '/fixtures/router_routes.json'});
-    router.routeConfig.should.be.instanceOf(Object);
 
     //test it as middle ware
     router.should.have.property('handle');
@@ -14,8 +13,9 @@ describe('minibar router:', function(){
     //test it as router
     router.should.have.property('match');
     router.match.should.be.instanceOf(Function);
-    router.should.have.property('routeConfig');
-    router.routeConfig.should.be.instanceOf(Object);
+    router.should.have.property('load');
+    router.match.should.be.instanceOf(Function);
+
     router.should.have.property('Collection');
     router.Collection.should.be.instanceOf(Function);
     router.should.have.property('collection');
@@ -23,19 +23,29 @@ describe('minibar router:', function(){
 
   });
 
-  it('factory should throw on wrong argument', function(){
+  describe('load()', function(){
 
-    (function(){
-      //path to routing config is mandatory
-      minibar.router();
-    }).should.throw(/Argument/);
+    var router;
+    beforeEach(function(){
+      router = minibar.router(__dirname + '/fixtures/router_routes.json');
+    });
 
-    (function(){
-      //non existing path
-      minibar.router({path: "app/routing.json"});
-    }).should.throw(/Exception while requiring routes/);
+    it('should throw on wrong argument', function(){
+
+      (function(){
+        //path to routing config is mandatory
+        router.load();
+      }).should.throw(/Argument/);
+
+      (function(){
+        //non existing path
+        router.load({path: "app/routing.json"});
+      }).should.throw(/Exception while requiring routes/);
+
+    });
 
   });
+
 
   /**
    * Test route collections
@@ -57,8 +67,45 @@ describe('minibar router:', function(){
 
     it("should have been initialized with some routes", function(){
       var coll = new router.Collection(validConfigs.valid1);
-      Object.keys(coll.routes).length.should.equal(2);
+      Object.keys(coll.routes).length.should.equal(3);
+
+      coll.routes.should.have.property('users');
+      coll.routes.users.path.should.equal('/users');
+      coll.routes.should.have.property('absolute');
+      coll.routes.absolute.path.should.equal('http://google.com/users');
+
     });
+
+    it("Should be able to add/remove/has/all route", function(){
+      var userRoutes = {
+        "index": {
+          "path": " users "
+        },
+        "one": {
+          "path": "/users/{id}"
+        },
+        "profile": {
+          "path": "/users/{id}",
+          "defaults": {"_controller": "profile"}
+        }
+      };
+
+      var c = new router.Collection({});
+      var r = userRoutes.index;
+
+      var r2 = c.add('test', userRoutes.one);
+      r2.should.equal(c);
+      Object.keys(c.all()).length.should.equal(1);
+      c.has('test').should.equal(true);
+
+      c.add('test', r);
+      Object.keys(c.all()).length.should.equal(1);
+      c.get('test').should.equal(r);
+      c.remove('test');
+      c.has('test').should.equal(false);
+      
+    });
+
 
     describe('add()', function() {
 
@@ -95,7 +142,7 @@ describe('minibar router:', function(){
       it("should walk all routes", function(){
 
         coll.build(validConfigs.valid1);
-        Object.keys(coll.routes).length.should.equal(2);
+        Object.keys(coll.routes).length.should.equal(3);
         coll.routes.should.have.property('index');
         coll.routes.should.have.property('users');
 
@@ -228,17 +275,53 @@ describe('minibar router:', function(){
 
   });
 
+  /**
+   * Test url generation
+   */
+  describe('generate()', function(){
+    var r, r2;
+    beforeEach(function(){
+      r = minibar.router().load(__dirname + '/fixtures/router_routes.json');
+      r2 = minibar.router().load(__dirname + '/fixtures/router_index.json');
+    });
+
+    it("#generate(), check parameters", function(){
+
+      (function(){
+        r.generate('bogus', {}); //non existing
+      }).should.throw();
+
+      (function(){
+        r.generate('house', {}); //to little arguments
+      }).should.throw();
+
+      (function(){
+        r.generate('basic', {type: 'coupe', id: 'aa', _format: 'xml'});   //doesnot fit requirements
+      }).should.throw();
+
+      var url0 = r2.generate('index');
+      url0.should.equal('/');
+
+      var url1 = r.generate('house', {type: 'coupe'}); 
+      url1.should.equal('/house/carcoupe/user');
+      var params = r.match(url1);
+      r.generate('house', params).should.equal(url1);
+
+      var url2 = r.generate('basic', {type: 'coupe', id: '1', _format: 'xml'});   //doesnot fit requirements
+      url2.should.equal('/basic/coupe/id-1.xmltest');
+
+    });
+
+  });
 
   /**
    * Test url matching
    */
   describe('match()', function(){
-
     var r, r2;
-
     beforeEach(function(){
-      r = minibar.router(__dirname + '/fixtures/router_routes.json');
-      r2 = minibar.router(__dirname + '/fixtures/router_index.json');
+      r = minibar.router().load(__dirname + '/fixtures/router_routes.json');
+      r2 = minibar.router().load(__dirname + '/fixtures/router_index.json');
     });
 
     it('should throw on wrong argument', function(){
@@ -247,7 +330,7 @@ describe('minibar router:', function(){
       }).should.throw(/Argument/);
     });
 
-    it("should match on url alonse", function(){
+    it("should match on url alone", function(){
 
       var res0 = r2.match('/');
       res0._route.should.equal('index');
@@ -344,7 +427,7 @@ describe('minibar router:', function(){
   describe('handle()', function(){
     var r;
     beforeEach(function(){
-      r = minibar.router(__dirname + '/fixtures/router_routes.json');
+      r = minibar.router().load(__dirname + '/fixtures/router_routes.json');
     });
 
     it('should read url, add attributes and call next', function(done){
