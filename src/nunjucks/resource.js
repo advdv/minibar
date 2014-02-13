@@ -60,7 +60,7 @@ var ResourceExtension = function ResourceExtension(config) {
         data = JSON.parse(body);  
       } catch(error) {
         //error on json parse
-        done(new Error('Error while parsing JSON, received following response body: "'+body+'"'), data);
+        done(new Error('Error while parsing JSON, is your endpoint configured correctly? Received: "'+body+'"'), data);
         return;
       }
 

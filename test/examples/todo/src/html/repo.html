@@ -1,0 +1,9 @@
+{% resource "https://api.github.com/repos/mikeal/request AS repo" %}
+	<pre>
+
+		<h1>{{ repo.name }}</h1>
+		<p>{{ repo.description }}</p>
+
+	</pre>
+
+{% endresource %}

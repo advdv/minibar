@@ -1,0 +1,7 @@
+{
+	"https://api.github.com/repos/{username}/{repo}": {
+	    "headers": {
+	        "User-Agent": "request"
+	    }
+	}
+}

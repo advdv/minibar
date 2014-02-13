@@ -104,8 +104,8 @@ describe('minibar interceptor:', function(){
     });
 
     it('should return config', function(){
-      //does not exist
-      interceptor.get('http://www.google.com/non-existing').should.equal(false);
+      //does not exist, return default request config
+      interceptor.get('http://www.google.com/non-existing').url.should.equal('http://www.google.com/non-existing');
 
       //match exact
       var conf = interceptor.get('http://www.google.com/results');

@@ -3,8 +3,13 @@ var nunjucks = require('nunjucks');
 
 describe('minibar renderer:', function(){
 
+  var interceptor;
+  beforeEach(function(){
+    interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json'});
+  });
+
   it('factory should create a object with correct (middleware) interface', function(){
-    var renderer = minibar.renderer({viewPath: __dirname + '/fixtures/views'});
+    var renderer = minibar.renderer({viewPath: __dirname + '/fixtures/views', interceptor: interceptor});
 
     //test it as middle ware
     renderer.should.have.property('handle').and.be.instanceOf(Function);
@@ -13,7 +18,7 @@ describe('minibar renderer:', function(){
     //test if nunjucks is initiated correctly
     renderer.templating.getTemplate('test.html');
     renderer.templating.autoesc.should.equal(true);
-    renderer = minibar.renderer({viewPath: __dirname + '/fixtures/views', nunjucks: {autoescape: false}});
+    renderer = minibar.renderer({viewPath: __dirname + '/fixtures/views',  interceptor: interceptor, nunjucks: {autoescape: false}});
     renderer.templating.autoesc.should.equal(false);
 
   });
@@ -26,7 +31,7 @@ describe('minibar renderer:', function(){
 
     (function(){
       //non existing path
-      minibar.renderer('/bogus');
+      minibar.renderer('/bogus', interceptor);
     }).should.throw(/Could not find view resolve path/);
   });
 
@@ -35,7 +40,7 @@ describe('minibar renderer:', function(){
 
     var renderer, request, response;
     beforeEach(function(){
-      renderer = minibar.renderer({viewPath: __dirname + '/fixtures/views'});
+      renderer = minibar.renderer({viewPath: __dirname + '/fixtures/views', interceptor: interceptor});
       response = {write: function(){}, end: function(){}};
       request = {
         attributes: {view: "test.html"}        

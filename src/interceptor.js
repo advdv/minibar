@@ -102,7 +102,10 @@ module.exports = function(options) {
       if(err.message.match(/No route was found/) === null) {
         throw err;
       } else {
-        return false; //not found? return false
+        //no configuration for endpoint? return default request config
+        return {
+          url: endpoint
+        };
       }
     }
 
@@ -126,11 +129,11 @@ module.exports = function(options) {
       {conf:       Args.OBJECT | Args.Required},
     ], arguments);
 
-    //config doesn't provide url then use the specified one
     conf = args.conf;
 
-    //transpose url to backrouter
-    conf.url = self.backRouter.generate(conf.attributes._route, conf.attributes);
+    //transpose url to backrouter if a route is specified
+    if(conf.attributes !== undefined && conf.attributes._route !== undefined)
+      conf.url = self.backRouter.generate(conf.attributes._route, conf.attributes);
 
     return conf;
   };

@@ -1,11 +1,13 @@
 var Args = require('args-js');
 var nunjucks = require('nunjucks');
+var ResourceExtension = require('./nunjucks/resource.js');
 var fs = require('fs');
 
 module.exports = function(config) {
   var self = {};
   config = Args([
     {viewPath:       Args.STRING | Args.Required},
+    {interceptor:       Args.OBJECT | Args.Required},
     {nunjucks: Args.OBJECT | Args.Optional, _default: {autoescape: true}}
   ], arguments);
 
@@ -16,8 +18,13 @@ module.exports = function(config) {
   //create nunjucks env
   self.templating = nunjucks.configure(config.viewPath, config.nunjucks);
 
-  //load extension
+  //@todo inject interceptor?
+  self.templating.addExtension('ResourceExtension', new ResourceExtension(config.interceptor));
 
+  //interceptor = minibar.interceptor({configFile: __dirname+'/../fixtures/endpoint/endpoints_valids.json'});
+
+  //@todo load extension
+  
 
   /**
    * middleware handle function
@@ -58,7 +65,11 @@ module.exports = function(config) {
 
       //render and add content
       tmpl.render(attribs, function(err, content){
+        if(err)
+          throw err;
+
         request.content = content;
+
         next();
       });  
     });

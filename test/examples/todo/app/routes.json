@@ -6,6 +6,13 @@
 		}
 	},
 
+	"repo": {
+		"path": "/repo",
+		"defaults": {
+			"view": "repo.html"
+		}
+	},
+
 	"index": {
 		"path": "/",
 		"defaults": {
@@ -15,4 +22,6 @@
 			"_method": "GET"
 		}
 	}
+
+
 }

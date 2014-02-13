@@ -247,6 +247,7 @@ module.exports = function(config) {
     var matched = false;
     var attributes = {};
 
+
     Object.keys(routes).forEach(function(name){
       if(matched === true)
         return;
@@ -410,7 +411,7 @@ module.exports = function(config) {
       next();
       return;
     }
-   
+
     //set request attributes
     request.attributes = attribs;
 

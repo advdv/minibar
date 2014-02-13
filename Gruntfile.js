@@ -1,4 +1,4 @@
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 
   //register tasks
   grunt.loadNpmTasks('grunt-mocha-test');

@@ -2,8 +2,10 @@ var express = require('express');
 var app = module.exports = express();
 var minibar = require('../../..');
 
+var interceptor = minibar.interceptor(__dirname + '/app/endpoints.json');
+
 app.use(minibar.router().load(__dirname + '/app/routes.json'));
-app.use(minibar.renderer(__dirname + '/src/html'));
+app.use(minibar.renderer(__dirname + '/src/html', interceptor));
 
 //writer
 app.use(function(req, res, next){
