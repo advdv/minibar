@@ -1,4 +1,5 @@
 var minibar = require('../..');
+var nconf = require('nconf');
 
 describe('minibar interceptor:', function(){
 
@@ -21,9 +22,18 @@ describe('minibar interceptor:', function(){
 
     (function(){
       minibar.interceptor({configFile: __dirname+'/bogus.json'});
-    }).should.throw(/Exception while requiring endpoint/);
+    }).should.throw(/Could not find/);
 
   });
+
+  it('should load configuration based on environment', function(){
+
+
+    //console.log('aaa');
+
+
+  });
+
 
   describe('parse()', function(){
     var interceptor;

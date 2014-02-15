@@ -1,24 +1,54 @@
 var Args = require('args-js');
 var request = require('request');
 var url = require('url');
+var fs = require('fs');
 var router = require('./router.js');
+var nconfCommon = require('nconf/lib/nconf/common.js');
+//We overwrite nconf seperator to allow http:// keys in config
+nconfCommon.path = function (key) {
+  return key.split('::');
+};
+
+nconfCommon.key = function () {
+  return Array.prototype.slice.call(arguments).join('::');
+};
+
+
+var nconf = require('nconf');
+
+/**
+ * Tthe default configuration for the interceptor
+ * @type {Object}
+ */
+var defaultConfiguration = {
+  "auto_update": false,
+  "endpoints": {}
+};
+
 
 module.exports = function(options) {
   var self = {};
 
+  self.configuration = new nconf.Provider();
   self.frontRouter = router();  
   self.backRouter = router();  
   self.endpoints = {};
 
   options = Args([
-    {configFile:       Args.STRING | Args.Required}
+    {configFile:       Args.STRING | Args.Required},
+    {configuration: Args.OBJECT | Args.Optional, _default: {}}
   ], arguments);
 
-  try {
-    self.endpointConfig = require(options.configFile);
-  } catch(err) {
-    throw new Error('Exception while requiring endpoint config from "'+options.configFile+'", does it exist and contains valid JSON?');
-  }
+
+  if(!fs.existsSync(options.configFile))
+    throw new Error('Could not find default endpoint configuration "'+options.configFile+'", does it exist');
+
+  self.configuration
+      .overrides(options.configuration) //argument config overwrite all
+      .file('default', options.configFile) //must have default endpoint config
+      .defaults(defaultConfiguration);
+
+  self.endpointConfig = self.configuration.get('endpoints');
 
   /**
    * Parse the endpoint or throw on wrong format
