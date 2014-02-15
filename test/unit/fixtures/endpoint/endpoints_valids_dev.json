@@ -1,0 +1,9 @@
+{
+	"endpoints":{
+		"http://www.google.com/results": {
+		    "headers": {
+		        "User-Agent": "request-test"
+		    }
+		}
+	}
+}

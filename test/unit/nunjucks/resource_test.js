@@ -60,6 +60,22 @@ describe('nunjucks resource tag:', function(){
 
   });
 
+  describe('parseResponse()', function(){
+    var data;
+    it('should parse string as JSON', function(){
+      data = ext.parseResponse('{"test": "test"}');
+      data.should.have.property('test').and.equal('test');
+
+      (function(){
+        data = ext.parseResponse('{"test": test"}');
+      }).should.throw(/Error while parsing JSON/);
+
+      var input = {test: 'aye'};
+      data = ext.parseResponse(input);
+      data.should.equal(input);
+    });
+  });
+
   describe('parse()', function(){
 
     it('should parse simple template, dont touch content, add one object to context', function(done){
@@ -78,11 +94,7 @@ describe('nunjucks resource tag:', function(){
       }).should.throw(/too many arguments/);
     });
 
-    it('should throw async invalid json is returned', function(){
-      (function(){
-        env.render('invalid2.html', {});
-      }).should.throw(/Error while parsing JSON/);
-    });
+
 
     it('should throw async invalid request', function(){
       (function(){

@@ -20,6 +20,10 @@
 
 		"http://www.github.com/ad/stargazers": {
 			"test": "bogus"
+		},
+
+		"http://www.facebook.com/api/me": {
+			"url": "file://app/test"
 		}
 	}
 }

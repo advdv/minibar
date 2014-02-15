@@ -2,7 +2,9 @@ var Args = require('args-js');
 var request = require('request');
 var url = require('url');
 var fs = require('fs');
+var path = require('path');
 var router = require('./router.js');
+var nconf = require('nconf');
 var nconfCommon = require('nconf/lib/nconf/common.js');
 //We overwrite nconf seperator to allow http:// keys in config
 nconfCommon.path = function (key) {
@@ -13,9 +15,6 @@ nconfCommon.key = function () {
   return Array.prototype.slice.call(arguments).join('::');
 };
 
-
-var nconf = require('nconf');
-
 /**
  * Tthe default configuration for the interceptor
  * @type {Object}
@@ -24,7 +23,6 @@ var defaultConfiguration = {
   "auto_update": false,
   "endpoints": {}
 };
-
 
 module.exports = function(options) {
   var self = {};
@@ -36,19 +34,28 @@ module.exports = function(options) {
 
   options = Args([
     {configFile:       Args.STRING | Args.Required},
+    {env: Args.STRING | Args.Optional, _default: 'dev'},
     {configuration: Args.OBJECT | Args.Optional, _default: {}}
   ], arguments);
 
+  /**
+   * Parse the default config file path en return one that 
+   * takes into account the current environment
+   * @param  {String} configFile the path
+   * @return {String}            env path
+   */
+  self.getEnvConfigFile = function(configFile, env) {
+    if(path.extname(configFile) !== '.json') {
+      throw new Error('Expected config file with json extension received: "'+configFile+'"');
+    }
+
+    var filename = path.basename(configFile);
+    filename = filename.replace('.json', '_'+env+'.json');
+    return  path.dirname(configFile)+'/'+filename;
+  };
 
   if(!fs.existsSync(options.configFile))
     throw new Error('Could not find default endpoint configuration "'+options.configFile+'", does it exist');
-
-  self.configuration
-      .overrides(options.configuration) //argument config overwrite all
-      .file('default', options.configFile) //must have default endpoint config
-      .defaults(defaultConfiguration);
-
-  self.endpointConfig = self.configuration.get('endpoints');
 
   /**
    * Parse the endpoint or throw on wrong format
@@ -65,6 +72,11 @@ module.exports = function(options) {
       ], [urlObj]);      
     } catch(err) {
       throw new Error('Exception while parsing endpoint "'+endpoint+'", expected format <protocol>://<hostname><path>');
+    }
+
+    var allowed = ['http:', 'https:'];
+    if(allowed.indexOf(endpoint.protocol) === -1) {
+      throw new Error('Unsupported protocol for endpoint: "'+endpoint.protocol+'", allowed: "'+allowed.join(', ')+'"');
     }
 
     return urlObj;
@@ -108,11 +120,44 @@ module.exports = function(options) {
       conf.url = path;
     }
 
+    //validate url config
+    urlObj = url.parse(conf.url);
+    var allowed = ['http:', 'https:', 'file:'];
+    if(allowed.indexOf(urlObj.protocol) === -1) {
+      throw new Error('Unsupported protocol for endpoint url: "'+urlObj.protocol+'", allowed: "'+allowed.join(', ')+'"');
+    }
+
     self.endpoints[path] = args.config;
     self.frontRouter.collection.add(path, {path: path, defaults: {}});
     self.backRouter.collection.add(path, {path: conf.url, defaults: {}});
     return self;
   };
+
+  /**
+   * This is called whenever their is not endpoint configuration
+   * for a request
+   *
+   * @param  {String} uri the request url
+   * @return {[type]}          [description]
+   */
+  self.noEndpointConfiguration = function(uri) {
+
+    //if configuration defines a auto write
+    //  1. read default endpoint configuration
+    //  2. write dev config with default endpoint configuration
+
+    //if configuration specifies auto create resources
+    //  1. read if resource is intercepted to locale file
+    //  2. see if not exists
+    //  3. create directory
+
+
+
+    return {
+      url: uri
+    };
+  };
+
 
   /**
    * Get the configuration for a certain endpoint using 
@@ -133,9 +178,7 @@ module.exports = function(options) {
         throw err;
       } else {
         //no configuration for endpoint? return default request config
-        return {
-          url: endpoint
-        };
+        return self.noEndpointConfiguration(endpoint);
       }
     }
 
@@ -179,11 +222,43 @@ module.exports = function(options) {
 
     //2. merge configuration into default
     var requestConf = self.createRequest(uri, conf);
-    
-    //3. call request with configuration
-    return request.call(request, requestConf, callback);
+
+    //if conf specifies a locale path as url
+    if(url.parse(requestConf.url).protocol === 'file:') {
+
+      //if conf specifies a locale path as url
+      //  1. don't do request
+      //  2. return a magic proxy js object that can lazy 
+      //     generate, load or save fake data
+
+      //console.log(requestConf);
+
+
+      var res = {login: 'test'};
+
+      //todo, what callback?
+      callback(false, {}, res);
+
+    } else {
+
+
+      
+      //3. call request with configuration
+      return request.call(request, requestConf, callback);
+
+    }
+
   };
 
+  //init logic
+  self.env = options.env;
+  self.configuration
+      .overrides(options.configuration) //argument config overwrite all
+      .file('env', self.getEnvConfigFile(options.configFile, self.env)) //must have default endpoint config
+      .file('default', options.configFile) //must have default endpoint config
+      .defaults(defaultConfiguration);
+
+  self.endpointConfig = self.configuration.get('endpoints');
   self.build(self.endpointConfig);
   return self;
 };

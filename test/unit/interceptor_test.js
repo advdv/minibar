@@ -26,11 +26,32 @@ describe('minibar interceptor:', function(){
 
   });
 
+  it('getEnvConfigFile()', function(){
+    var interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json'});
+    (function(){
+      interceptor.getEnvConfigFile('endpoints_valids.js', 'dev');
+    }).should.throw(/json extension/);
+
+    interceptor.getEnvConfigFile('/fixtures/endpoint/endpoints_valids.json', 'dev').should.equal('/fixtures/endpoint/endpoints_valids_dev.json');
+
+  });
+
+
   it('should load configuration based on environment', function(){
 
+    //default env should be 'dev'
+    var interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json'});
+    interceptor.env.should.equal('dev');
 
-    //console.log('aaa');
+    //should have merged, but kept default configuration because it's not specified
+    interceptor.endpointConfig['http://www.google.com/results'].headers['User-Agent'].should.equal('request-test');
+    interceptor.configuration.get('auto_update').should.equal(false);
 
+    interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json', env: 'test'});
+    interceptor.env.should.equal('test');
+
+    //should not have merged because _test.json doesn't exist
+    interceptor.endpointConfig['http://www.google.com/results'].headers['User-Agent'].should.equal('request');
 
   });
 
@@ -51,6 +72,11 @@ describe('minibar interceptor:', function(){
         interceptor.parse('www.google.com/hello/ad', {});  
       }).should.throw(/Exception while parsing endpoint/);
 
+      (function(){
+        interceptor.parse('ftp://www.google.com/files', {});    
+      }).should.throw(/Unsupported protocol/);
+
+
     });
   });
 
@@ -64,6 +90,13 @@ describe('minibar interceptor:', function(){
       (function(){
         interceptor.add('bogus', 'bogus');
       }).should.throw(/Argument/);
+
+      (function(){
+        interceptor.add('http://www.google.com/hello/{name}', {
+          url: 'ftp://google.com/files'
+        });
+      }).should.throw(/Unsupported protocol/);
+
     });
 
     it('add on valid endpoint', function(){
@@ -94,7 +127,7 @@ describe('minibar interceptor:', function(){
 
       interceptor.build(interceptor.endpointConfig);
       
-      Object.keys(interceptor.endpoints).length.should.equal(4);
+      Object.keys(interceptor.endpoints).length.should.equal(5);
       interceptor.endpoints.should.have.property('http://www.google.com/results');
       interceptor.endpoints.should.have.property('http://www.github.com/{user}/repos');
 
@@ -161,6 +194,25 @@ describe('minibar interceptor:', function(){
       res.should.have.property('headers');
 
     });
+  });
+
+  describe('request()', function(){
+    var interceptor, res;
+    beforeEach(function(){
+      interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json'});
+    });
+
+    it('should return a magic object with lazy data generation function on locale path', function(done){
+
+      var res = interceptor.request('http://www.facebook.com/api/me', function(err, response, body){
+
+        body.should.be.type('object');
+
+        done();
+      });
+    });
+
+
   });
 
 

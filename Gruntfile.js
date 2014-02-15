@@ -1,9 +1,9 @@
 module.exports = function (grunt) {
 
   //register tasks
-  grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-nodemon');
+  grunt.loadNpmTasks('grunt-shell');
 
   // Project configuration.
   grunt.initConfig({
@@ -15,29 +15,26 @@ module.exports = function (grunt) {
         script: 'test/examples/todo/todo-example.js',
         options: {
           ext: 'js,json',
+          nodeArgs: ['--harmony-proxies'],
           watch: ['src', 'test']
         }
       }
     },
 
-    //
-    // Mocha testing unit/integration
-    //
-    mochaTest: {
-      integration: {
-        options: {
-          require: ['should'],
-          mocha: require('mocha')
+    //run shell testing
+    shell: {                        
+        unit_test: {                    
+            options: {
+                stdout: true
+            },
+            command: './node_modules/.bin/mocha ./test/unit --require should --harmony-proxies'
         },
-        src: ['test/integration/*.js']
-      },
-      unit: {
-        options: {
-          require: ['should'],
-          mocha: require('mocha')
-        },
-        src: ['test/unit/**/*_test.js']
-      }
+        integration_test: {
+            options: {
+                stdout: true
+            },
+            command: './node_modules/.bin/mocha ./test/integration --require should --harmony-proxies'
+        }
     },
 
     //
@@ -46,16 +43,16 @@ module.exports = function (grunt) {
     watch: {
       src: {
         files: ['index.js', 'src/**/*.js'],
-        tasks: ['mochaTest:unit', 'mochaTest:integration']
+        tasks: ['shell:unit_test', 'shell:integration_test']
       },
 
       integration_tests: {
         files: ['test/integration/*.js', 'test/examples/**/*-example.js', 'test/examples/**/*.json'],
-        tasks: ['mochaTest:integration']
+        tasks: ['shell:integration_test']
       },
       unit_tests: {
         files: ['test/unit/**/*_test.js', 'test/unit/**/*.json', 'test/unit/fixtures/**/*.html'],
-        tasks: ['mochaTest:unit', 'mochaTest:integration']
+        tasks: ['shell:unit_test', 'shell:integration_test']
       },
     },
 
@@ -63,7 +60,7 @@ module.exports = function (grunt) {
 
   // Default task(s).
   grunt.registerTask('default', []);
-  grunt.registerTask('test', ['mochaTest:integration']);
+  grunt.registerTask('test', ['shell:unit_test', 'shell:integration_test']);
   grunt.registerTask('start', ['watch']);
   grunt.registerTask('examples:todo', ['nodemon:todo_example']);
 

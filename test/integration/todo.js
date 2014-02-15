@@ -28,4 +28,16 @@ describe('TODO example:', function(){
     });
   });
 
+  //@todo, proxy request to github server
+  
+  /*
+  describe('"/repo"',function(){
+    it('GET should return 200 and contain "ad"', function(done){
+      request(app)
+        .get('/repo')
+        .expect(200, /Simplified HTTP request client/, done);
+    });
+  });
+  */
+
 });
