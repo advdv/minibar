@@ -1,0 +1,7 @@
+{% resource "https://api.github.com/repos/mikeal/request AS repo" %}
+	seethrough{{repo.name}}
+	{% resource "https://api.github.com/repos/mikeal/request AS repo" %}
+		inner
+	{% endresource %}
+	after
+{% endresource %}

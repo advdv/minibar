@@ -122,7 +122,7 @@ var createProxy = function(resource, faker, writer, parentName) {
         proxy.resource[name] = newVal;
 
       } else if(proxy._typeOfAccess(name) === 'array'){
-        
+      
         //only create values for index access
         if(!isNaN(name)) {
           proxy.resource[name] = newVal;

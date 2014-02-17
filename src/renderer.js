@@ -69,7 +69,6 @@ module.exports = function(config) {
           throw err;
 
         request.content = content;
-
         next();
       });  
     });

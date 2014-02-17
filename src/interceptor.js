@@ -239,8 +239,6 @@ module.exports = function(options) {
       throw new Error('Error while parsing JSON, is your endpoint configured correctly? Received: "'+resourceData+'"');
     }
 
-
-
     //create writer
     var w = false;
     if(self.configuration.get('auto_write::resources') === true) {
@@ -297,6 +295,8 @@ module.exports = function(options) {
             return;
           }
         }
+
+        //console.log('proxify:', data);
 
         callback(false, self.proxify(data, file));  
       });

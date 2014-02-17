@@ -1,6 +1,7 @@
 var minibar = require('../..');
 var ResourceExtension = require('../../src/nunjucks/resource.js');
 var nunjucks = require('nunjucks');
+var nunjucksLib = require('nunjucks/src/lib.js');
 var sinon = require('sinon');
 
 var requestStub = function(url, cb) {
@@ -9,10 +10,16 @@ var requestStub = function(url, cb) {
   } else if(url === '/invalid') {
     cb(new Error('Invalid url'), false);
   } else {
+    setTimeout(function(){
+
     cb(false, {
       name: 'Jacky',
-      likes: 5
+      likes: 5,
+      items: ["item1", "item2", "item3"]
     });
+    }, 10);
+
+
   }
 };
 
@@ -21,6 +28,7 @@ describe('nunjucks resource tag:', function(){
   var env, ext, interceptor;
   beforeEach(function(){
     interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json'});
+
     sinon.stub(interceptor, "request", requestStub);
 
     env = nunjucks.configure(__dirname + '/fixtures/views/resource', {});
@@ -83,6 +91,23 @@ describe('nunjucks resource tag:', function(){
       (function(){
         env.render('invalid3.html', {});
       }).should.throw(/Invalid url/);
+    });
+
+    it('should parse template with nested resources', function(done){
+      env.render('nested.html', {}, function(err, res){
+        if(err)
+          throw err;
+
+        res.replace(/\s/g, "") .should.equal('seethroughJackyinnerafter');
+        done();
+      });
+    });
+
+    it('nunjucks lib should correctly recognize proxy arrays', function(){
+      nunjucksLib.isArray([]).should.equal(true);
+      nunjucksLib.isArray({}).should.equal(false);
+      nunjucksLib.isArray(minibar.proxy([])).should.equal(true);
+      nunjucksLib.isArray(minibar.proxy({})).should.equal(false);
     });
 
   });

@@ -1,4 +1,12 @@
 var nunjucks = require('nunjucks');
+var nunjucksLib = require('nunjucks/src/lib.js');
+nunjucksLib.isArray = function(input) {
+    if(input.$isProxy === true) {
+        return Array.isArray(input.$resource);
+    } 
+    return Array.isArray(input);
+};
+
 var Args = require('args-js');
 
 var ResourceExtension = function ResourceExtension(config) {
@@ -38,7 +46,7 @@ var ResourceExtension = function ResourceExtension(config) {
 
     //parse body
     parser.advanceAfterBlockEnd(tok.value);
-    var body = parser.parseUntilBlocks('endresource', 'endtruncate');
+    var body = parser.parseUntilBlocks('endresource');
 
     parser.advanceAfterBlockEnd();
     return new nodes.CallExtensionAsync(self, 'run', args, [body]);
@@ -57,7 +65,14 @@ var ResourceExtension = function ResourceExtension(config) {
 
       //parse result data and add to context
       context.ctx[resource.variable] = proxy;
-      done(false, new nunjucks.runtime.SafeString(content()));
+
+      //render innercontent async
+      content(function(err, content){
+        done(false, new nunjucks.runtime.SafeString(content));
+      });
+
+
+      
     });
   };
 };

@@ -14,7 +14,7 @@ module.exports = function (grunt) {
       todo_example: {
         script: 'test/examples/todo/todo-example.js',
         options: {
-          ext: 'js,json',
+          ext: 'js,json,html',
           nodeArgs: ['--harmony-proxies'],
           watch: ['src', 'test']
         }

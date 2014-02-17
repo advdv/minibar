@@ -1,31 +1,37 @@
 {% resource "https://api.github.com/users/advanderveer AS user" %}
 
-	<b>spec: {{ user.spec.username }}</b>
-
 	<h1>{{ user.username }}</h1>
+	<b>company: {{ user.company.company_suffix }} {{ user.company.company_name }}</b>
 	<em>{{ user.email }}</em>
 	<p>{{ user.description }}</p>
 
-	<b>street: {{ user.address }}</b>
-
+	<h2>Key val loop:</h2>
 	<ul>
-	{% for k,val in user %}
-		<li>{{ k }}: {{ val }}</li>
-	{% endfor %}
+		{% asyncAll key,val in user %}
+		  <li>{{ key }}: {{ val }}</li>
+
+	  	  {% resource "https://api.github.com/users/inneruser AS inneruser" %}
+		  	{{inneruser.login}}
+		  {% endresource %}
+
+	
+		{% endall %}
 	</ul>
 
+	<h2>array val loop:</h2>
 	<ul>
-	{% for el in user %}
-		<li>{{ el.country }}, {{ el.name }}</li>
-	{% endfor %}
+		{% for item in user.items %}
+		  
+		  <li>
+		  	{{ item }}
+
+			  {% resource "https://api.github.com/users/inneruser AS inneruser" %}
+			  	{{ inneruser.login }}
+			  {% endresource %}
+		  </li>
+
+		{% endfor %}
+
 	</ul>
-
-
-	<ul>
-	{% for el in user.teset.aaarg %}
-		<li>{{ el.country }}</li>
-	{% endfor %}
-	</ul>
-
 
 {% endresource %}

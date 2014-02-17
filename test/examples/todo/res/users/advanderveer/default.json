@@ -2,5 +2,6 @@
     "login": "local advanderveer",
     "username": "Pink_Hintz",
     "email": "Wiegand_Keyon@Keagan.name",
-    "description": "Totam itaque rerum recusandae minus quia sunt officiis. Doloribus qui commodi nulla exercitationem dolores fuga."
+    "description": "Totam itaque rerum recusandae minus quia sunt officiis. Doloribus qui commodi nulla exercitationem dolores fuga.",
+    "items": ["item1", "item2"]
 }
