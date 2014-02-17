@@ -25,13 +25,15 @@ module.exports = function (grunt) {
     shell: {                        
         unit_test: {                    
             options: {
-                stdout: true
+                stdout: true,
+                stderr: true
             },
-            command: './node_modules/.bin/mocha ./test/unit --require should --harmony-proxies'
+            command: './node_modules/.bin/mocha ./test/unit/**/*_test.js --require should --harmony-proxies'
         },
         integration_test: {
             options: {
-                stdout: true
+                stdout: true,
+                stderr: true
             },
             command: './node_modules/.bin/mocha ./test/integration --require should --harmony-proxies'
         }

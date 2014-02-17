@@ -1,6 +1,10 @@
 var minibar = require('../..');
 var nconf = require('nconf');
+var fs = require('fs');
+var path = require('path');
+var temp = require('temp');
 
+temp.track();
 describe('minibar interceptor:', function(){
 
   it('factory should create a object with correct interface', function(){
@@ -45,7 +49,7 @@ describe('minibar interceptor:', function(){
 
     //should have merged, but kept default configuration because it's not specified
     interceptor.endpointConfig['http://www.google.com/results'].headers['User-Agent'].should.equal('request-test');
-    interceptor.configuration.get('auto_update').should.equal(false);
+    interceptor.configuration.get('resource_dir').should.equal('../res');
 
     interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json', env: 'test'});
     interceptor.env.should.equal('test');
@@ -75,7 +79,6 @@ describe('minibar interceptor:', function(){
       (function(){
         interceptor.parse('ftp://www.google.com/files', {});    
       }).should.throw(/Unsupported protocol/);
-
 
     });
   });
@@ -127,7 +130,7 @@ describe('minibar interceptor:', function(){
 
       interceptor.build(interceptor.endpointConfig);
       
-      Object.keys(interceptor.endpoints).length.should.equal(5);
+      Object.keys(interceptor.endpoints).length.should.equal(6);
       interceptor.endpoints.should.have.property('http://www.google.com/results');
       interceptor.endpoints.should.have.property('http://www.github.com/{user}/repos');
 
@@ -196,24 +199,81 @@ describe('minibar interceptor:', function(){
     });
   });
 
-  describe('request()', function(){
-    var interceptor, res;
-    beforeEach(function(){
-      interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json'});
-    });
 
-    it('should return a magic object with lazy data generation function on locale path', function(done){
+  describe('filesystem interactions', function(){
 
-      var res = interceptor.request('http://www.facebook.com/api/me', function(err, response, body){
-
-        body.should.be.type('object');
-
-        done();
+      var interceptor, res, tmpResourceDir;
+      beforeEach(function(){
+        var endpointFile = __dirname+'/fixtures/endpoint/endpoints_valids.json';
+        
+        tmpResourceDir = path.relative(path.dirname(endpointFile), temp.mkdirSync());
+        interceptor = minibar.interceptor({configFile: endpointFile});
       });
-    });
 
+      describe('proxify()', function(done){
+        it('should throw on invalid usage', function(){
+          (function(){
+            interceptor.proxify({});
+          }).should.throw(/Argument/);
+          
+         (function(){
+            interceptor.proxify('bogus json');
+          }).should.throw(/Error while parsing JSON/);
+        });
+
+        it('should throw when auto_write is enabled but no file is provided', function(){
+          interceptor.configuration.set('auto_write::resources', true);
+          (function(){
+            interceptor.proxify('{}');
+          }).should.throw(/did not receive a resource file/);
+        });
+
+        it('should receive write enabled proxy', function(){
+          interceptor.configuration.set('auto_write::resources', true);
+          var proxy = interceptor.proxify('{}', __dirname + '/fixtures/writer/valid_resource.json');
+          proxy.$writer.should.not.equal(false);
+          proxy.$faker.should.equal(false);
+        });
+
+
+        it('should receive fake data proxy', function(){
+          interceptor.configuration.set('auto_write::resources', true);
+          interceptor.configuration.set('fake_data', true);
+          var proxy = interceptor.proxify('{}', __dirname + '/fixtures/writer/valid_resource.json');
+          proxy.$writer.should.not.equal(false);
+          proxy.$faker.should.not.equal(false);
+
+        });
+
+      });
+
+
+      describe('request()', function(done){
+        it('should throw when resource file cannot be read', function(done){      
+            interceptor.request('http://www.facebook.com/api/bogus', function(err){
+              err.should.be.an.instanceOf(Error);
+              done();
+            });
+        });
+
+        it('should throw when resource_dir is not configured', function(){
+          (function(){
+            interceptor.configuration.set('resource_dir', false);
+            interceptor.request('http://www.facebook.com/api/me');
+          }).should.throw(/"resource_dir" is not configured/);
+        });
+
+        it('should return a proxy with the file content if it exists', function(done){
+          interceptor.request('http://www.facebook.com/api/me', function(err, proxy){
+            proxy.$resource.should.be.type('object');
+            proxy.$resource.id.should.equal(10);
+            proxy.$resource.username.should.equal('advanderveer');
+            done();
+          });
+        });
+
+      });
 
   });
-
 
 });

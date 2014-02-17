@@ -1,18 +1,18 @@
-var minibar = require('../../..');
-var ResourceExtension = require('../../../src/nunjucks/resource.js');
+var minibar = require('../..');
+var ResourceExtension = require('../../src/nunjucks/resource.js');
 var nunjucks = require('nunjucks');
 var sinon = require('sinon');
 
 var requestStub = function(url, cb) {
   if(url === 'https://api.github.com/invalid') {
-    cb(false, {}, 'invalid json');
+    cb(false, 'invalid json');
   } else if(url === '/invalid') {
-    cb(new Error('Invalid url'), {}, false);
+    cb(new Error('Invalid url'), false);
   } else {
-    cb(false, {}, JSON.stringify({
+    cb(false, {
       name: 'Jacky',
       likes: 5
-    }));
+    });
   }
 };
 
@@ -20,10 +20,10 @@ describe('nunjucks resource tag:', function(){
 
   var env, ext, interceptor;
   beforeEach(function(){
-    interceptor = minibar.interceptor({configFile: __dirname+'/../fixtures/endpoint/endpoints_valids.json'});
+    interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json'});
     sinon.stub(interceptor, "request", requestStub);
 
-    env = nunjucks.configure(__dirname + '/../fixtures/views/resource', {});
+    env = nunjucks.configure(__dirname + '/fixtures/views/resource', {});
     ext = new ResourceExtension(interceptor);
     env.addExtension('ResourceExtension', ext);
   });
@@ -60,22 +60,6 @@ describe('nunjucks resource tag:', function(){
 
   });
 
-  describe('parseResponse()', function(){
-    var data;
-    it('should parse string as JSON', function(){
-      data = ext.parseResponse('{"test": "test"}');
-      data.should.have.property('test').and.equal('test');
-
-      (function(){
-        data = ext.parseResponse('{"test": test"}');
-      }).should.throw(/Error while parsing JSON/);
-
-      var input = {test: 'aye'};
-      data = ext.parseResponse(input);
-      data.should.equal(input);
-    });
-  });
-
   describe('parse()', function(){
 
     it('should parse simple template, dont touch content, add one object to context', function(done){
@@ -93,7 +77,6 @@ describe('nunjucks resource tag:', function(){
         env.render('invalid1.html', {});
       }).should.throw(/too many arguments/);
     });
-
 
 
     it('should throw async invalid request', function(){

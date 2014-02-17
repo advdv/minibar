@@ -1,8 +1,31 @@
 {% resource "https://api.github.com/users/advanderveer AS user" %}
-	<pre>
 
-		{{ user.login }}
+	<b>spec: {{ user.spec.username }}</b>
 
-	</pre>
+	<h1>{{ user.username }}</h1>
+	<em>{{ user.email }}</em>
+	<p>{{ user.description }}</p>
+
+	<b>street: {{ user.address }}</b>
+
+	<ul>
+	{% for k,val in user %}
+		<li>{{ k }}: {{ val }}</li>
+	{% endfor %}
+	</ul>
+
+	<ul>
+	{% for el in user %}
+		<li>{{ el.country }}, {{ el.name }}</li>
+	{% endfor %}
+	</ul>
+
+
+	<ul>
+	{% for el in user.teset.aaarg %}
+		<li>{{ el.country }}</li>
+	{% endfor %}
+	</ul>
+
 
 {% endresource %}

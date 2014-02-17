@@ -28,20 +28,6 @@ var ResourceExtension = function ResourceExtension(config) {
     };
   };
 
-  self.parseResponse = function(body) {
-    var data = body;
-    if(typeof data === 'string') {
-      try {
-        data = JSON.parse(body);  
-      } catch(error) {
-        throw new Error('Error while parsing JSON, is your endpoint configured correctly? Received: "'+body+'"');
-      }        
-    }
-
-    return data;
-  };
-
-
   self.parse = function(parser, nodes, lexer) {
     //get token and args
     var tok = parser.nextToken();
@@ -63,25 +49,16 @@ var ResourceExtension = function ResourceExtension(config) {
     resource = self.parseResource(arg1);
 
     //get resource and add result to context
-    self.interceptor.request(resource.url, function(err, response, body){
+    self.interceptor.request(resource.url, function(err, proxy){
       if(err) {
         done(err); //error on request
         return;
       }
 
-      var data;
-      try{
-        data = self.parseResponse(body);
-      } catch(error) {
-        done(error);
-      }
-      
       //parse result data and add to context
-      context.ctx[resource.variable] = data;
+      context.ctx[resource.variable] = proxy;
       done(false, new nunjucks.runtime.SafeString(content()));
-
     });
-
   };
 };
 

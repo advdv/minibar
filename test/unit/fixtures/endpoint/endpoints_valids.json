@@ -23,7 +23,11 @@
 		},
 
 		"http://www.facebook.com/api/me": {
-			"url": "file://app/test"
+			"url": "file:///api/me"
+		},
+
+		"http://www.facebook.com/api/bogus": {
+			"url": "file:///api/bogus"
 		}
 	}
 }

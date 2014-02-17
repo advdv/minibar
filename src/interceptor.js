@@ -3,9 +3,15 @@ var request = require('request');
 var url = require('url');
 var fs = require('fs');
 var path = require('path');
-var router = require('./router.js');
+var mkdirp = require('mkdirp');
 var nconf = require('nconf');
 var nconfCommon = require('nconf/lib/nconf/common.js');
+
+var router = require('./router.js');
+var writer = require('./writer.js');
+var proxy = require('./proxy.js');
+var faker = require('./faker.js');
+
 //We overwrite nconf seperator to allow http:// keys in config
 nconfCommon.path = function (key) {
   return key.split('::');
@@ -20,8 +26,14 @@ nconfCommon.key = function () {
  * @type {Object}
  */
 var defaultConfiguration = {
-  "auto_update": false,
-  "endpoints": {}
+  "resource_dir": '../res',
+  "resource_filename": "default.json",
+  "default_resource": {},
+  "endpoints": {},
+  "fake_data": false,
+  "auto_write": {
+    "resources": false,
+  }
 };
 
 module.exports = function(options) {
@@ -142,16 +154,11 @@ module.exports = function(options) {
    */
   self.noEndpointConfiguration = function(uri) {
 
-    //if configuration defines a auto write
+    //get default endpoint configuration
+
+    //if configuration defines a auto write config
     //  1. read default endpoint configuration
     //  2. write dev config with default endpoint configuration
-
-    //if configuration specifies auto create resources
-    //  1. read if resource is intercepted to locale file
-    //  2. see if not exists
-    //  3. create directory
-
-
 
     return {
       url: uri
@@ -212,6 +219,49 @@ module.exports = function(options) {
   };
 
   /**
+   * Return a proxy to the original resource that
+   * can intercept calls to properties that are undefined
+   *   
+   * @param  {string} resourceData the resource as it currently is
+   * @param {string} resourceFile optional path to the file fakes the resource
+   * @return {Proxy}          a proxy object
+   */
+  self.proxify = function(resourceData, resourceFile) {
+    var args = Args([
+      {resourceData:       Args.STRING | Args.Required},
+      {resourceFile:       Args.STRING | Args.Optional},
+    ], arguments);
+
+    var resource;
+    try {
+      resource = JSON.parse(args.resourceData);  
+    } catch(error) {
+      throw new Error('Error while parsing JSON, is your endpoint configured correctly? Received: "'+resourceData+'"');
+    }
+
+
+
+    //create writer
+    var w = false;
+    if(self.configuration.get('auto_write::resources') === true) {
+      if(!resourceFile)
+        throw new Error('Auto write was enabled but did not receive a resource file');
+
+      w = writer(resourceFile, resourceData);
+    }
+
+    //create faker
+    var f = false;
+    if(self.configuration.get('fake_data') === true) {
+      f = faker();
+    }
+
+    //create and return resource proxy 
+    return proxy({resource: resource, writer: w, faker: f});
+  };
+
+
+  /**
    * Get a resource through the interceptor
    * @return {undefined} [description]
    */
@@ -224,27 +274,39 @@ module.exports = function(options) {
     var requestConf = self.createRequest(uri, conf);
 
     //if conf specifies a locale path as url
-    if(url.parse(requestConf.url).protocol === 'file:') {
+    var urlObj = url.parse(requestConf.url);
+    if(urlObj.protocol === 'file:') {
+      if(!self.configuration.get('resource_dir')) {
+        throw new Error('Endpoint url points to directory but "resource_dir" is not configured');
+      }
 
-      //if conf specifies a locale path as url
-      //  1. don't do request
-      //  2. return a magic proxy js object that can lazy 
-      //     generate, load or save fake data
+      //create dir based on configfile location, configuration and endpoint conf
+      var filename = self.configuration.get('resource_filename');
+      var file = path.normalize(path.dirname(options.configFile)+ '/' + self.configuration.get('resource_dir')+urlObj.path + '/' + filename);
+      fs.readFile(file, {encoding: 'utf8'},function (err, data) {
+        if(err) {
+          //if file is not found and auto write is enabled, create dir structure and touch file
+          if(err.code === 'ENOENT' && self.configuration.get('auto_write::resources') === true) {
+            data = JSON.stringify(self.configuration.get('default_resource'));
+            
+            // @todo write/create/touch files lazy instead by the writer
+            /*mkdirp.sync(path.dirname(file));
+            fs.writeFileSync(file, data); //touch file */
+          } else {
+            callback(new Error('Error while reading endpoint resource file at "'+file+'":' + err));            
+            return;
+          }
+        }
 
-      //console.log(requestConf);
-
-
-      var res = {login: 'test'};
-
-      //todo, what callback?
-      callback(false, {}, res);
+        callback(false, self.proxify(data, file));  
+      });
 
     } else {
 
-
-      
       //3. call request with configuration
-      return request.call(request, requestConf, callback);
+      request.call(request, requestConf, function(err, response, data){
+        callback(err, self.proxify(data));
+      });
 
     }
 

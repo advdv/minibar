@@ -29,12 +29,15 @@
     "grunt-contrib-watch": "~0.5.3",
     "grunt-nodemon": "~0.2.0",
     "sinon": "~1.8.2",
-    "grunt-shell": "~0.6.4"
+    "grunt-shell": "~0.6.4",
+    "temp": "~0.6.0"
   },
   "dependencies": {
     "args-js": "~0.10.3",
     "nunjucks": "~1.0.1",
     "request": "~2.33.0",
-    "nconf": "~0.6.9"
+    "nconf": "~0.6.9",
+    "mkdirp": "~0.3.5",
+    "casual": "~1.4.3"
   }
 }
