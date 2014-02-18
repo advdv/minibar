@@ -1,7 +1,21 @@
 var minibar = require('../..');
 var nconf = require('nconf');
+var fs = require('fs');
 var path = require('path');
 var temp = require('temp');
+/***
+temp:
+
+        "https://api.github.com/users/{username}": {
+            "url": "file:///users/{username}"
+        },
+
+
+*/
+
+
+
+
 
 temp.track();
 describe('minibar interceptor:', function(){
@@ -209,7 +223,43 @@ describe('minibar interceptor:', function(){
         interceptor = minibar.interceptor({configFile: endpointFile});
       });
 
-      describe('proxify()', function(done){
+      describe('noEndpointConfiguration()', function(done){
+
+        var tmpEndpointFile, tmpInterceptor;
+        beforeEach(function(){
+          tmpEndpointFile = tmpResourceDir + '/endpoints.json';
+          fs.writeFileSync(tmpEndpointFile, '{}');
+
+          tmpInterceptor = minibar.interceptor({configFile: tmpEndpointFile});
+
+        });
+
+        it('should throw when configuration is but en file is non existing', function(){
+          tmpInterceptor.configuration.set('auto_write::endpoints', true);
+
+          //throw when not
+          (function(){
+            tmpInterceptor.noEndpointConfiguration('http://stepshape.com/new-endpoint');
+          }).should.throw(/could not read/);
+        });
+
+        it('should read from env config', function(){
+          fs.writeFileSync(tmpInterceptor.getEnvConfigFile(), '{}');
+          
+          tmpInterceptor.configuration.set('auto_write::endpoints', true);
+          var res = tmpInterceptor.noEndpointConfiguration('http://stepshape.com/new-endpoint');
+          var conf = JSON.parse(fs.readFileSync(tmpInterceptor.getEnvConfigFile()));
+
+          conf.should.have.property('endpoints');
+          conf.endpoints.should.have.property('http://stepshape.com/new-endpoint');
+          conf.endpoints['http://stepshape.com/new-endpoint'].should.have.property('url').and.equal('file://stepshape.com/new-endpoint');
+          conf.endpoints['http://stepshape.com/new-endpoint'].should.eql(res);
+
+        });
+
+      });
+
+      describe('proxify()', function(){
         it('should throw on invalid usage', function(){
           (function(){
             interceptor.proxify({});

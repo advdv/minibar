@@ -1,0 +1,39 @@
+{
+    "username": "Chris.Feil",
+    "company": {
+        "company_suffix": "PLC",
+        "company_name": "Rice Ltd"
+    },
+    "email": "Wiegand_Gaetano@Lang.biz",
+    "description": "Sequi voluptatem voluptate. Blanditiis velit beatae perferendis odit nulla ab eos aut necessitatibus.",
+    "items": [
+        {
+            "date": {
+                "year": "2013",
+                "username": "Larkin.Christopher"
+            },
+            "card_number": "5165423290997766"
+        },
+        {
+            "date": {
+                "year": "1977",
+                "username": "Gislason.Magnolia"
+            },
+            "card_number": "4539450020827597"
+        },
+        {
+            "date": {
+                "year": "2013",
+                "username": "Gerson_Lakin"
+            },
+            "card_number": "5414894744029104"
+        },
+        {
+            "date": {
+                "year": "2009",
+                "username": "Scarlett.O'Keefe"
+            },
+            "card_number": "5393894319179036"
+        }
+    ]
+}

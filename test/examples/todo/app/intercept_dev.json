@@ -1,21 +1,23 @@
 {
-	"fake_data": true,
-	"auto_write": {
-		"resources": true
-	},
-	"endpoints": {
-		"https://api.github.com/repos/{username}/{repo}": {
-		    "headers": {
-		        "User-Agent": "request"
-		    }
-		},
-
-		"https://api.github.com/users/{username}": {
-		    "url": "file:///users/{username}"
-		},
-
-		"https://api.github.com/users/{username}/items/{itemId}": {
-		    "url": "file:///users/{username}/items/{itemId}"
-		}
-	}
+    "fake_data": true,
+    "auto_write": {
+        "resources": true,
+        "endpoints": true
+    },
+    "endpoints": {
+        "https://api.github.com/repos/{username}/{repo}": {
+            "headers": {
+                "User-Agent": "request"
+            }
+        },
+        "https://api.github.com/users/{username}": {
+            "url": "file://api.github.com/users/{username}"
+        },
+        "https://api.github.com/users/{username}/items/{itemId}": {
+            "url": "file://api.github.com/users/{username}/items/{itemId}"
+        },
+        "https://api.stepshape.com/users/advanderveer": {
+            "url": "file://api.stepshape.com/users/advanderveer"
+        }
+    }
 }

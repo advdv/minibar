@@ -68,6 +68,10 @@ module.exports = function(config) {
         if(err)
           throw err;
 
+        if(!content) {
+          throw new Error('Rendering "'+attribs.view+'" resulted in an empty reponse.')
+        }
+
         request.content = content;
         next();
       });  

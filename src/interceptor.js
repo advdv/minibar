@@ -30,8 +30,15 @@ var defaultConfiguration = {
   "default_resource": {},
   "endpoints": {},
   "fake_data": false,
+  "default_endpoint": {
+    "url": {
+      "protocol": "file:"
+    }
+  },
+
   "auto_write": {
     "resources": false,
+    "endpoints": false
   }
 };
 
@@ -56,6 +63,13 @@ module.exports = function(options) {
    * @return {String}            env path
    */
   self.getEnvConfigFile = function(configFile, env) {
+    args = Args([
+      {configFile:       Args.STRING | Args.Optional, _default: options.configFile},
+      {env:              Args.STRING | Args.Optional, _default: self.env}
+    ], arguments);
+    configFile = args.configFile;
+    env = args.env;
+
     if(path.extname(configFile) !== '.json') {
       throw new Error('Expected config file with json extension received: "'+configFile+'"');
     }
@@ -153,11 +167,38 @@ module.exports = function(options) {
    */
   self.noEndpointConfiguration = function(uri) {
 
-    //get default endpoint configuration
+    //if configured, write endpoint configuration
+    if(self.configuration.get('auto_write::endpoints') === true) {
+      var file = self.getEnvConfigFile();
+      var conf = false;
+      try {
+         conf = JSON.parse(fs.readFileSync(file));  
+      } catch(err) {
+        throw new Error('Auto write is enabled for env "'+self.env+'", but could not read configuration: ' + err.message);
+      }
 
-    //if configuration defines a auto write config
-    //  1. read default endpoint configuration
-    //  2. write dev config with default endpoint configuration
+      var endpoints = conf.endpoints;
+      if(endpoints === undefined) {
+        conf.endpoints = endpoints = {};
+      }
+
+      //construct default endpoint config
+      var endpointConf = self.configuration.get('default_endpoint');
+    
+      //construct default url
+      var defaultUrlObj = endpointConf.url;
+      var urlObj = url.parse(uri);
+      Object.keys(defaultUrlObj).forEach(function(key){
+        urlObj[key] = defaultUrlObj[key];
+      });
+
+      endpointConf.url = url.format(urlObj);
+      endpoints[uri] = endpointConf;
+
+      //write the result
+      fs.writeFileSync(file, JSON.stringify(conf, false, 4));
+      return endpointConf;
+    }
 
     return {
       url: uri
@@ -268,7 +309,11 @@ module.exports = function(options) {
 
       //create dir based on configfile location, configuration and endpoint conf
       var filename = self.configuration.get('resource_filename');
-      var file = path.normalize(path.dirname(options.configFile)+ '/' + self.configuration.get('resource_dir')+urlObj.path + '/' + filename);
+      var file = path.normalize(path.dirname(options.configFile)+ 
+                '/' + self.configuration.get('resource_dir') + 
+                '/' + urlObj.hostname + urlObj.path + 
+                '/' + filename);
+
       fs.readFile(file, {encoding: 'utf8'},function (err, data) {
         if(err) {
           //if file is not found fake it with default_resource data
@@ -293,6 +338,11 @@ module.exports = function(options) {
 
       //3. call request with configuration
       request.call(request, requestConf, function(err, response, data){
+        if(err) {
+          callback(new Error('Error requesting '+JSON.stringify(requestConf)+', ' + err));
+          return;
+        }
+
         callback(err, self.proxify(data));
       });
 
@@ -304,7 +354,7 @@ module.exports = function(options) {
   self.env = options.env;
   self.configuration
       .overrides(options.configuration) //argument config overwrite all
-      .file('env', self.getEnvConfigFile(options.configFile, self.env)) //must have default endpoint config
+      .file('env', self.getEnvConfigFile()) //must have default endpoint config
       .file('default', options.configFile) //must have default endpoint config
       .defaults(defaultConfiguration);
 

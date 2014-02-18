@@ -1,9 +1,8 @@
 {% resource "https://api.github.com/users/advanderveer AS user" %}
 
-
 	<h1>{{ user.username }}</h1>
 	<b>company: {{ user.company.company_suffix }} {{ user.company.company_name }}</b>
-		
+
 	<em>{{ user.email }}</em>
 	<p>{{ user.description }}</p>
 
@@ -16,27 +15,24 @@
 
 	<h2>array val loop:</h2>
 	<ul>
-		{% for item in user.items %}
-		  
-		  <li>
-		  	{{ item.date.year }}
-		  	{{ item.date.username }}
-		  	{{ item.card_number }}
-		  </li>
+		{% for item in user.items %}		  
+			<li>
+				{{ item.date.year }}
+				{{ item.date.username }}
+				{{ item.card_number }}
+			</li>
 
-		  {% resource "https://api.github.com/users/advanderveer/items/1 AS userItem" %}
-		  	{{ userItem.random }}
-		  	{{ userItem.color_name }}
-		  {% endresource %}
+			{% resource "https://api.github.com/users/advanderveer/items/1 AS userItem" %}
+				{{ userItem.random }}
+				{{ userItem.color_name }}
+			{% endresource %}
 
-		  {% resource "https://api.github.com/users/advanderveer/items/2 AS userItems" %}
-		  	{% for its in userItems %}
-		  		{{ its.catch_phrase }}
-		  	{% endfor %}
-		  {% endresource %}
-
+			{% resource "https://api.github.com/users/advanderveer/items/2 AS userItems" %}
+				{% for its in userItems %}
+					{{ its.catch_phrase }}
+				{% endfor %}
+			{% endresource %}
 		{% endfor %}
-
 	</ul>
 
 {% endresource %}

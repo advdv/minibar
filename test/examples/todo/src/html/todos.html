@@ -1,0 +1,10 @@
+{% resource "https://api.stepshape.com/users/advanderveer AS profile" %}
+
+	<ul>
+	{% for key,val in profile %}
+		<li>{{key}}: {{ val }}</li>
+	{% endfor %}
+	</ul>
+
+
+{% endresource %}

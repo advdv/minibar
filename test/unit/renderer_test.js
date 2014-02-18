@@ -63,6 +63,14 @@ describe('minibar renderer:', function(){
       done();
     });
 
+    it('should throw on rendering an empty view', function(done){
+      (function(){
+        renderer.handle({attributes: {view: 'empty.html'}}, {}, done);
+      }).should.throw(/empty/);
+
+      done();
+    });
+
     it('should add template on', function(done){
 
       renderer.handle(request, response, function(){

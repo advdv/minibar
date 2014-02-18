@@ -20,6 +20,13 @@
 		}
 	},
 
+	"todos": {
+		"path": "/user/{username}/todos",
+		"defaults": {
+			"view": "todos.html"
+		}
+	},
+
 	"index": {
 		"path": "/",
 		"defaults": {
