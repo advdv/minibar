@@ -3,7 +3,6 @@ var request = require('request');
 var url = require('url');
 var fs = require('fs');
 var path = require('path');
-var mkdirp = require('mkdirp');
 var nconf = require('nconf');
 var nconfCommon = require('nconf/lib/nconf/common.js');
 
@@ -12,7 +11,7 @@ var writer = require('./writer.js');
 var proxy = require('./proxy.js');
 var faker = require('./faker.js');
 
-//We overwrite nconf seperator to allow http:// keys in config
+//We overwrite nconf seperator to allow http:// keys in endpoint config
 nconfCommon.path = function (key) {
   return key.split('::');
 };
@@ -223,13 +222,11 @@ module.exports = function(options) {
    * can intercept calls to properties that are undefined
    *   
    * @param  {string} resourceData the resource as it currently is
-   * @param {string} resourceFile optional path to the file fakes the resource
    * @return {Proxy}          a proxy object
    */
-  self.proxify = function(resourceData, resourceFile) {
+  self.proxify = function(resourceData) {
     var args = Args([
       {resourceData:       Args.STRING | Args.Required},
-      {resourceFile:       Args.STRING | Args.Optional},
     ], arguments);
 
     var resource;
@@ -239,15 +236,6 @@ module.exports = function(options) {
       throw new Error('Error while parsing JSON, is your endpoint configured correctly? Received: "'+resourceData+'"');
     }
 
-    //create writer
-    var w = false;
-    if(self.configuration.get('auto_write::resources') === true) {
-      if(!resourceFile)
-        throw new Error('Auto write was enabled but did not receive a resource file');
-
-      w = writer(resourceFile, resourceData);
-    }
-
     //create faker
     var f = false;
     if(self.configuration.get('fake_data') === true) {
@@ -255,7 +243,7 @@ module.exports = function(options) {
     }
 
     //create and return resource proxy 
-    return proxy({resource: resource, writer: w, faker: f});
+    return proxy({res: resource, faker: f});
   };
 
 
@@ -283,22 +271,22 @@ module.exports = function(options) {
       var file = path.normalize(path.dirname(options.configFile)+ '/' + self.configuration.get('resource_dir')+urlObj.path + '/' + filename);
       fs.readFile(file, {encoding: 'utf8'},function (err, data) {
         if(err) {
-          //if file is not found and auto write is enabled, create dir structure and touch file
-          if(err.code === 'ENOENT' && self.configuration.get('auto_write::resources') === true) {
+          //if file is not found fake it with default_resource data
+          if(err.code === 'ENOENT' && self.configuration.get('fake_data') === true) {
             data = JSON.stringify(self.configuration.get('default_resource'));
-            
-            // @todo write/create/touch files lazy instead by the writer
-            /*mkdirp.sync(path.dirname(file));
-            fs.writeFileSync(file, data); //touch file */
           } else {
             callback(new Error('Error while reading endpoint resource file at "'+file+'":' + err));            
             return;
           }
         }
 
-        //console.log('proxify:', data);
+        //create writer
+        var resourceWriter = false;
+        if(self.configuration.get('auto_write::resources') === true) {
+          resourceWriter = writer(file, data);
+        }
 
-        callback(false, self.proxify(data, file));  
+        callback(false, self.proxify(data), resourceWriter);  
       });
 
     } else {

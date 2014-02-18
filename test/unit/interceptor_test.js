@@ -1,6 +1,5 @@
 var minibar = require('../..');
 var nconf = require('nconf');
-var fs = require('fs');
 var path = require('path');
 var temp = require('temp');
 
@@ -221,40 +220,55 @@ describe('minibar interceptor:', function(){
           }).should.throw(/Error while parsing JSON/);
         });
 
-        it('should throw when auto_write is enabled but no file is provided', function(){
-          interceptor.configuration.set('auto_write::resources', true);
-          (function(){
-            interceptor.proxify('{}');
-          }).should.throw(/did not receive a resource file/);
-        });
+
 
         it('should receive write enabled proxy', function(){
-          interceptor.configuration.set('auto_write::resources', true);
           var proxy = interceptor.proxify('{}', __dirname + '/fixtures/writer/valid_resource.json');
-          proxy.$writer.should.not.equal(false);
           proxy.$faker.should.equal(false);
         });
 
 
         it('should receive fake data proxy', function(){
-          interceptor.configuration.set('auto_write::resources', true);
           interceptor.configuration.set('fake_data', true);
           var proxy = interceptor.proxify('{}', __dirname + '/fixtures/writer/valid_resource.json');
-          proxy.$writer.should.not.equal(false);
           proxy.$faker.should.not.equal(false);
-
         });
 
       });
 
 
       describe('request()', function(done){
-        it('should throw when resource file cannot be read', function(done){      
+        it('should throw when resource file cannot be read fake_data is disabled', function(done){      
+            interceptor.configuration.set('fake_data', false);
             interceptor.request('http://www.facebook.com/api/bogus', function(err){
               err.should.be.an.instanceOf(Error);
               done();
             });
         });
+
+        it('should return with writer when auto_write and fake_dat is enabled', function(done){
+            interceptor.configuration.set('fake_data', true);
+            interceptor.configuration.set('auto_write::resources', true);
+            interceptor.request('http://www.facebook.com/api/bogus', function(err, proxy, writer){
+              err.should.not.be.an.instanceOf(Error);
+              proxy.$isProxy.should.equal(true);
+              writer.should.be.an.instanceOf(Object);
+              writer.should.have.property('file');
+
+              done();
+            });
+
+        });
+
+        it('should not throw when resource file cannot be read and fake_data is enabled', function(done){      
+            interceptor.configuration.set('fake_data', true);
+            interceptor.request('http://www.facebook.com/api/bogus', function(err, proxy){
+              err.should.equal(false);
+              proxy.$resource.should.eql(interceptor.configuration.get('default_resource'));
+              done();
+            });
+        });
+
 
         it('should throw when resource_dir is not configured', function(){
           (function(){

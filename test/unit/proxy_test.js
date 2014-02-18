@@ -1,5 +1,6 @@
 var minibar = require('../..');
 var assert = require('assert');
+var sinon = require('sinon');
 
 describe('minibar proxy:', function(){
 
@@ -122,7 +123,6 @@ describe('minibar proxy:', function(){
   });
 
   describe('faked behaviour', function(){
-
     it('type: object access', function(){
       var res = {
         country: 'paaseiland'
@@ -158,10 +158,112 @@ describe('minibar proxy:', function(){
 
     });
 
+  });
+
+  
+  describe('_normalize()', function(){
+
+    it('should normalize primitives proxy', function(){
+      minibar.proxy('hello').$_normalize().should.equal('hello');
+      minibar.proxy(10.5).$_normalize().should.equal(10.5);
+      minibar.proxy(true).$_normalize().should.equal(true);
+    });
+
+    it('should normalize primitives arrays', function(){
+      minibar.proxy(['hello', 10.5, true]).$_normalize().should.eql(['hello', 10.5, true]);
+      minibar.proxy(['hello', 10.5, ['item1', 'item2']]).$_normalize().should.eql(['hello', 10.5, ['item1', 'item2']]);
+    });
+
+    it('should normalize a proxied object', function(){
+      minibar.proxy({str: 'hello', nr: 11.5, bool: true}).$_normalize().should.eql({str: 'hello', nr: 11.5, bool: true});
+      minibar.proxy({str: 'hello', arr: ['item1', 10]}).$_normalize().should.eql({str: 'hello', arr: ['item1', 10]});
+
+      var proxy = minibar.proxy({
+        nr: 10,
+        bool: true,
+        str: 'hello world',
+        arr: ['item1', 2, ['test'], {test: 'test'}],
+        obj: {
+          nestedNr: 1.5,
+          nestedBool: false,
+          nestedStr: 'nested hello',
+          nestedArr: [5, 'item2']
+        }
+      }, minibar.faker({seed: 1}));
+
+      proxy.$isProxy.should.equal(true);
+      proxy.arr.$isProxy.should.equal(true);
+      proxy.arr[2].$isProxy.should.equal(true);
+      proxy.arr[3].$isProxy.should.equal(true);
+      proxy.arr[3].test.$isProxy.should.equal(true);
+
+      //this transforms leaf primitive into an object
+      proxy.arr[3].test.nest.$isProxy.should.equal(true);
+
+      proxy.$_normalize().should.eql({
+        nr: 10,
+        bool: true,
+        str: 'hello world',
+        arr: ['item1', 2, ['test'], {test: {nest: {}}}],
+        obj: {
+          nestedNr: 1.5,
+          nestedBool: false,
+          nestedStr: 'nested hello',
+          nestedArr: [5, 'item2']
+        }
+      });
+    });
+
+    describe('edge cases: ',function(){
+
+      it('dont overwrite defined objects', function(){
+
+        var proxy = minibar.proxy({
+          username: 'fake_user'
+        }, minibar.faker(1));
+
+        proxy.company.toString().should.equal('esse repellat quisquam recusandae alias consequuntur corporis');
+        proxy.company.company_suffix.toString().should.equal('Ltd');
+        proxy.company.company_name.toString().should.equal('Feest Inc');
+        proxy.company.toString().should.equal('[object Object]');
+
+      });
+
+      it('generator is function', function(){
+
+         var proxy = minibar.proxy({
+            username: 'fake_user'
+          }, minibar.faker(1));
+
+         proxy.card_number.toString().should.equal('5502082966266759');
+
+      });
+
+      /*
+
+      it('console inspecting should not break everything', function(){
+        var proxy = minibar.proxy({
+          username: 'fake_user'
+        }, minibar.faker(1));
+
+        proxy.items.length.should.equal(8);
+        proxy.items[0].toString().should.equal('repellat quisquam recusandae alias consequuntur corporis repellat');
+        proxy.items[1].toString().should.equal('ratione ut sunt qui amet iure ut');
+
+        console.log(proxy.items);
+        proxy.items.length.should.equal(8);
+      });
+
+*/
+
+
+    });
+
+
+
 
 
   });
-
 
 
 });

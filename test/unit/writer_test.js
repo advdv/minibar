@@ -1,5 +1,8 @@
 var minibar = require('../..');
+var temp = require('temp');
+var fs = require('fs');
 
+temp.track();
 describe('minibar writer:', function(){
 
   it('should throw on invalid constructor arguments', function(){
@@ -8,62 +11,59 @@ describe('minibar writer:', function(){
     }).should.throw(/Argument/);
   });
 
-  it('should have correct interface', function(){
-    writer = minibar.writer(__dirname + '/./fixtures/writer/valid_resource.json');
+  it('should init and have correct interface', function(){
+    var writer = minibar.writer(__dirname + '/./fixtures/writer/valid_resource.json');
     writer.data.should.have.property('firstName').and.equal('Ad');
 
     writer = minibar.writer(__dirname + '/./fixtures/writer/valid_resource.json', {firstName: 'Warner'});
     writer.data.should.have.property('firstName').and.equal('Warner');
   });
 
-  /*
+ 
+  describe('update()', function(){
+    it('should update data prop', function(){
+      var writer = minibar.writer(__dirname + '/./fixtures/writer/valid_resource.json', {firstName: 'Warner'});
+      writer.update({firstName: 'New'});
 
-  var writer;
-  it('should have correct interface', function(){
-    writer = minibar.writer(__dirname + '/./fixtures/writer/valid_resource.json');
-
-    writer = minibar.writer(__dirname + '/./fixtures/writer/valid_resource.json', {firstName: 'Warner'});
-    writer._data.should.have.property('firstName').and.equal('Warner');
-
-    //try some random stuff
-    writer.username.should.be.an.instanceOf(String);
-    writer.userName.should.be.an.instanceOf(String);
-    writer.user_name.should.be.an.instanceOf(String);
-    writer.asdfasdf.should.be.an.instanceOf(String);
-
-  });
-
-
-
-  describe('normalizeIndexKey()', function(){
-    it('should normalize index keys', function(){
-      writer._normalizeIndexKey('test_K-else').should.equal('testkelse');
+      writer.data.firstName.should.equal('New');
     });
   });
 
-  describe('generateFakerIndex()', function(){
-    it('should normalize casual property names correctly', function(){
+  describe('file system interaction', function(){
 
-      writer._generateFakerIndex();
-      writer._fakerIndex.should.have.property('rgbhex').and.equal(casual.functions().rgb_hex);
-      writer._fakerIndex.should.have.property('streetsuffix').and.equal(casual.functions().street_suffix);
-    });
-  });
-
-  describe('searchFakerIndex()', function(){
-
+    var writer, res, tmpDir;
     beforeEach(function(){
-      writer._generateFakerIndex();
+      tmpDir = temp.mkdirSync();
+      res = {
+        nr: 10,
+        bool: true,
+        str: 'hello world',
+        arr: ['item1', 2, ['test'], {test: 'test'}],
+        obj: {
+          nestedNr: 1.5,
+          nestedBool: false,
+          nestedStr: 'nested hello',
+          nestedArr: [5, 'item2']
+        }
+      };
+
+      writer = minibar.writer(tmpDir + '/resource.json', res);
     });
 
-    it('should do some smart matching', function(){
-      writer._searchFakerIndex('asdfasdf').should.equal(casual.functions().sentence);
+    it('should auto create dir and file on persist', function(){
 
-      writer._searchFakerIndex('rgbhex').should.equal(casual.functions().rgb_hex);
-      writer._searchFakerIndex('rGb_HeX').should.equal(casual.functions().rgb_hex);
+      fs.existsSync(writer.file).should.equal(false);
+      writer.persist();
+      fs.existsSync(writer.file).should.equal(true);
+
+      //multiple persists shouldn't throw
+      (function(){
+        writer.persist();
+        writer.persist();
+      }).should.not.throw();
+
     });
+
   });
-
-*/
 
 });

@@ -1,5 +1,8 @@
 {
 	"fake_data": true,
+	"auto_write": {
+		"resources": true
+	},
 	"endpoints": {
 		"https://api.github.com/repos/{username}/{repo}": {
 		    "headers": {
@@ -9,6 +12,10 @@
 
 		"https://api.github.com/users/{username}": {
 		    "url": "file:///users/{username}"
+		},
+
+		"https://api.github.com/users/{username}/items/{itemId}": {
+		    "url": "file:///users/{username}/items/{itemId}"
 		}
 	}
 }

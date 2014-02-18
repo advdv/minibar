@@ -4,32 +4,41 @@ var nunjucks = require('nunjucks');
 var nunjucksLib = require('nunjucks/src/lib.js');
 var sinon = require('sinon');
 
-var requestStub = function(url, cb) {
-  if(url === 'https://api.github.com/invalid') {
-    cb(false, 'invalid json');
-  } else if(url === '/invalid') {
-    cb(new Error('Invalid url'), false);
-  } else {
-    setTimeout(function(){
-
-    cb(false, {
-      name: 'Jacky',
-      likes: 5,
-      items: ["item1", "item2", "item3"]
-    });
-    }, 10);
-
-
-  }
-};
 
 describe('nunjucks resource tag:', function(){
 
-  var env, ext, interceptor;
+  var env, ext, interceptor, writer;
   beforeEach(function(){
     interceptor = minibar.interceptor({configFile: __dirname+'/fixtures/endpoint/endpoints_valids.json'});
+    writer = minibar.writer(__dirname + '/fixtures/writer/valid_resource.json', {name: 'Warner'});
+    sinon.stub(writer, "update");
+    sinon.stub(writer, "persist");
+
+    var requestStub = function(url, cb) {
+      if(url === 'https://api.github.com/invalid') {
+        cb(false, 'invalid json');
+      } else if(url === '/invalid') {
+        cb(new Error('Invalid url'), false);
+      } else {
+        setTimeout(function(){
+
+        cb(false, {
+          name: 'Jacky',
+          likes: 5,
+          items: ["item1", "item2", "item3"],
+          $_normalize: function(){
+            return {};
+          }
+        }, writer);
+        }, 10);
+
+      }
+    };
+
+
 
     sinon.stub(interceptor, "request", requestStub);
+
 
     env = nunjucks.configure(__dirname + '/fixtures/views/resource', {});
     ext = new ResourceExtension(interceptor);
@@ -75,6 +84,10 @@ describe('nunjucks resource tag:', function(){
         if(err)
           throw err;
 
+        writer.persist.calledOnce.should.equal(true);
+        writer.update.calledOnce.should.equal(true);
+        writer.update.calledBefore(writer.persist).should.equal(true);
+
         res.should.equal('before\nseethroughJacky\nafter');
         done();
       });
@@ -107,7 +120,8 @@ describe('nunjucks resource tag:', function(){
       nunjucksLib.isArray([]).should.equal(true);
       nunjucksLib.isArray({}).should.equal(false);
       nunjucksLib.isArray(minibar.proxy([])).should.equal(true);
-      nunjucksLib.isArray(minibar.proxy({})).should.equal(false);
+      nunjucksLib.isArray(minibar.proxy({})).should.equal(true);
+      nunjucksLib.isArray(minibar.proxy({test: 'a'})).should.equal(false);
     });
 
   });
