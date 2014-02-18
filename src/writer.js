@@ -20,14 +20,33 @@ module.exports = function(options) {
     options.originalData = JSON.parse(options.originalData);
 
   self.data = options.originalData;
+  self.dirty = false;
+
+  self.diff = function(resource) {
+    var o = JSON.stringify(self.data);
+    var n = JSON.stringify(resource);
+    if(o != n) {
+      return true;
+    }
+
+    return false;
+  };
 
   self.update = function(resource) {
-    self.data = resource;
+    var diff = self.diff(resource);
+
+    if(diff !== false) {
+      self.data = resource;
+      self.dirty = true;
+    }
   };
 
   self.persist = function() {
-    mkdirp.sync(path.dirname(self.file));
-    fs.writeFileSync(self.file, JSON.stringify(self.data, false, 4));
+    if(self.dirty === true) {
+      mkdirp.sync(path.dirname(self.file));
+      fs.writeFileSync(self.file, JSON.stringify(self.data, false, 4));      
+      self.dirty = false;
+    }
   };
 
   return self;

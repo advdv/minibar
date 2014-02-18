@@ -3,19 +3,6 @@ var nconf = require('nconf');
 var fs = require('fs');
 var path = require('path');
 var temp = require('temp');
-/***
-temp:
-
-        "https://api.github.com/users/{username}": {
-            "url": "file:///users/{username}"
-        },
-
-
-*/
-
-
-
-
 
 temp.track();
 describe('minibar interceptor:', function(){

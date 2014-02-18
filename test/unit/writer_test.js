@@ -53,6 +53,7 @@ describe('minibar writer:', function(){
     it('should auto create dir and file on persist', function(){
 
       fs.existsSync(writer.file).should.equal(false);
+      writer.dirty = true;
       writer.persist();
       fs.existsSync(writer.file).should.equal(true);
 
